@@ -15,3 +15,6 @@ https://download.geofabrik.de/europe/bulgaria.html
 # Test
 You can test if the grap you generated works by running `python test-generate-route.py` . There's already a predefined route in the python file.
 To see what values the first few edges hold you can run `python test-preview-graph.py`
+
+# Get a slice of the whole graph dataset of Bulgaria
+`osmium extract --bbox 23.0728311,41.4934159,23.9858941,43.502965 bulgaria-latest.osm.pbf -o bulgaria-slice.osm.pbf`

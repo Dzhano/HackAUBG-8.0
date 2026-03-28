@@ -4,9 +4,9 @@ import pickle
 import time
 from scipy.spatial import cKDTree
 
-GRAPH_FILE = "./raw-data/sofia-driving-dataset.pkl"
+GRAPH_FILE = "./raw-data/bulgaria-slice-driving-graph-all.pkl"
 ACCIDENTS_FILE = "./accidents-dataset.csv"
-OUTPUT_GRAPH_FILE = "./weighted-graph.pkl"
+OUTPUT_GRAPH_FILE = "./weighted-graph-v2.pkl"
 
 INJURY_WEIGHT = 3.0
 DEATH_WEIGHT = 10.0

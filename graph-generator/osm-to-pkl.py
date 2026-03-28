@@ -1,7 +1,7 @@
 from pyrosm import OSM
 import pickle
 
-osm = OSM("./raw-data/bulgaria-latest.osm.pbf")
+osm = OSM("./raw-data/bulgaria-slice.osm.pbf")
 nodes, edges = osm.get_network(network_type="driving", nodes=True)
 G = osm.to_graph(nodes, edges, graph_type="networkx")
 
