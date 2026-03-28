@@ -29,7 +29,8 @@ def find_path(graph_state, start, end, rf):
             "start_node": start_node,
             "end_node": end_node,
             "geometry": mapping(line),
-            "total_accidents": total_accidents
+            "total_accidents": total_accidents,
+            "risk_factor": rf
         }
 
     except nx.NetworkXNoPath:

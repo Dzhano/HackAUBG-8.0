@@ -1,5 +1,7 @@
-import { GeoJSON } from 'react-leaflet';
+import { useMap } from 'react-leaflet';
 import { useStore, Variant } from '../../store/useStore';
+import { useEffect, useRef } from 'react';
+import L from 'leaflet';
 
 const ROUTE_COLORS: Record<Variant, string> = {
     shortest: 'red',
@@ -8,33 +10,68 @@ const ROUTE_COLORS: Record<Variant, string> = {
 };
 
 export const MapRoutes = () => {
+    const map = useMap();
     const response = useStore((s) => s.response);
     const currentVariant = useStore((s) => s.currentVariant);
+    const layersRef = useRef<L.GeoJSON[]>([]);
 
-    if (!response) return null;
+    // Clear and redraw routes when response or selection changes
+    useEffect(() => {
+        // Clear all old layers first
+        layersRef.current.forEach((layer) => {
+            if (map.hasLayer(layer)) {
+                map.removeLayer(layer);
+            }
+        });
+        layersRef.current = [];
 
-    const variants: Variant[] = ['shortest', 'current', 'safest'];
+        if (!response) return;
 
-    return (
-        <>
-            {variants.map((variant) => {
+        const variants: Variant[] = ['shortest', 'current', 'safest'];
+
+        // Draw non-selected routes first (so they're behind)
+        variants
+            .filter((v) => v !== currentVariant)
+            .forEach((variant) => {
                 const route = response[variant];
-                if (!route?.geometry) return null;
+                if (!route?.geometry) return;
 
-                const isSelected = variant === currentVariant;
+                const layer = L.geoJSON(route.geometry as GeoJSON.GeoJsonObject, {
+                    style: {
+                        color: ROUTE_COLORS[variant],
+                        weight: 4,
+                        opacity: 0.6,
+                    },
+                });
 
-                return (
-                    <GeoJSON
-                        key={`${variant}-${JSON.stringify(route.geometry.coordinates.slice(0, 2))}`}
-                        data={route.geometry as GeoJSON.GeoJsonObject}
-                        style={{
-                            color: ROUTE_COLORS[variant],
-                            weight: isSelected ? 7 : 4,
-                            opacity: isSelected ? 1 : 0.6,
-                        }}
-                    />
-                );
-            })}
-        </>
-    );
+                layer.addTo(map);
+                layersRef.current.push(layer);
+            });
+
+        // Draw selected route last (on top)
+        const selectedRoute = response[currentVariant];
+        if (selectedRoute?.geometry) {
+            const selectedLayer = L.geoJSON(selectedRoute.geometry as GeoJSON.GeoJsonObject, {
+                style: {
+                    color: ROUTE_COLORS[currentVariant],
+                    weight: 7,
+                    opacity: 1,
+                },
+            });
+
+            selectedLayer.addTo(map);
+            layersRef.current.push(selectedLayer);
+        }
+
+        // Cleanup on unmount
+        return () => {
+            layersRef.current.forEach((layer) => {
+                if (map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                }
+            });
+        };
+    }, [map, response, currentVariant]);
+
+    return null;
 };

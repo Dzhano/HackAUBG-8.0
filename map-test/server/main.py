@@ -50,7 +50,7 @@ app.add_middleware(
 def navigation(req: NavigationRequest):
     current = find_path(graph_state, req.start, req.end, req.risk_factor)
     shortest = None
-    safest = find_path(graph_state, req.start, req.end, req.risk_factor * 1.5)
+    safest = find_path(graph_state, req.start, req.end, req.risk_factor * 2.5)
     
     if req.risk_factor != 0:
         shortest = find_path(graph_state, req.start, req.end, 0)
