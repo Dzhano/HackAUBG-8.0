@@ -1,12 +1,33 @@
+import { useCallback } from 'react';
 import { useStore } from '../store/useStore';
-export const Header = () => {
-    const startPoint = useStore(state => state.start);
-    const endPoint = useStore(state => state.end);
-    const fetchRoutes = useStore(state => state.fetchRoutes);
+import { StreetInput } from './common/StreetInput';
 
-    function handleSubmit() {
-        fetchRoutes();
-    }
+export const Header = () => {
+    const startLabel = useStore((s) => s.startLabel);
+    const endLabel = useStore((s) => s.endLabel);
+    const setStart = useStore((s) => s.setStart);
+    const setEnd = useStore((s) => s.setEnd);
+    const fetchRoutes = useStore((s) => s.fetchRoutes);
+
+    const handleStartSelect = useCallback(
+        (lat: number, lng: number, label: string) => setStart({ lat, lng }, label),
+        [setStart],
+    );
+
+    const handleEndSelect = useCallback(
+        (lat: number, lng: number, label: string) => setEnd({ lat, lng }, label),
+        [setEnd],
+    );
+
+    const handleStartChange = useCallback(
+        (text: string) => setStart({}, text),
+        [setStart],
+    );
+
+    const handleEndChange = useCallback(
+        (text: string) => setEnd({}, text),
+        [setEnd],
+    );
 
     return (
         <header className="flex items-center justify-between p-4 bg-white border-b shadow-md sticky top-0 z-10">
@@ -14,34 +35,23 @@ export const Header = () => {
                 SafeWay
             </div>
 
-            {/* Address Inputs */}
             <div className="flex flex-1 max-w-3xl mx-8 gap-3">
-                <div className="flex-1 relative">
-                    <input
-                        list="photon-data"
-                        type="text"
-                        placeholder="Starting point (Sofia)..."
-                        className="w-full px-4 py-2 bg-gray-100 border border-transparent rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        value={startPoint.lat + ', ' + startPoint.lng}
-                        readOnly
-                        // onChange={(e) => { setAddr1(e.target.value); getAutofill(e.target.value); }}
-                    />
-                </div>
-                
-                <div className="flex-1 relative">
-                    <input
-                        list="photon-data"
-                        type="text"
-                        placeholder="Destination..."
-                        className="w-full px-4 py-2 bg-gray-100 border border-transparent rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        value={endPoint.lat + ', ' + endPoint.lng}
-                        readOnly
-                        // onChange={(e) => { setAddr2(e.target.value); getAutofill(e.target.value); }}
-                    />
-                </div>
+                <StreetInput
+                    placeholder="Starting point (Sofia)..."
+                    value={startLabel}
+                    onSelect={handleStartSelect}
+                    onChange={handleStartChange}
+                />
 
-                <button 
-                    onClick={handleSubmit}
+                <StreetInput
+                    placeholder="Destination..."
+                    value={endLabel}
+                    onSelect={handleEndSelect}
+                    onChange={handleEndChange}
+                />
+
+                <button
+                    onClick={fetchRoutes}
                     className="px-8 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 shadow-lg active:scale-95 transition-all"
                 >
                     Go!
@@ -49,4 +59,4 @@ export const Header = () => {
             </div>
         </header>
     );
-}
+};

@@ -28,13 +28,15 @@ export interface RouteResponse {
 interface StoreState {
   start: RoutePoint;
   end: RoutePoint;
+  startLabel: string;
+  endLabel: string;
   response: RouteResponse | null;
   isLoading: boolean;
   error: string | null;
   currentVariant: Variant;
   setCurrentVariant: (variant: Variant) => void;
-  setStart: (point: Partial<RoutePoint>) => void;
-  setEnd: (point: Partial<RoutePoint>) => void;
+  setStart: (point: Partial<RoutePoint>, label?: string) => void;
+  setEnd: (point: Partial<RoutePoint>, label?: string) => void;
   fetchRoutes: () => Promise<void>;
   reset: () => void;
 }
@@ -47,26 +49,33 @@ const defaultPoint: RoutePoint = {
 export const useStore = create<StoreState>((set, get) => ({
   start: { ...defaultPoint },
   end: { ...defaultPoint },
+  startLabel: '',
+  endLabel: '',
   response: null,
   isLoading: false,
   error: null,
-    currentVariant: 'current',
+  currentVariant: 'current',
 
   setCurrentVariant: (variant) =>
     set({ currentVariant: variant }),
 
-  setStart: (point) =>
-    set((state) => ({ start: { ...state.start, ...point } })),
+  setStart: (point, label?) =>
+    set((state) => ({
+      start: { ...state.start, ...point },
+      ...(label !== undefined && { startLabel: label }),
+    })),
 
-  setEnd: (point) =>
-    set((state) => ({ end: { ...state.end, ...point } })),
+  setEnd: (point, label?) =>
+    set((state) => ({
+      end: { ...state.end, ...point },
+      ...(label !== undefined && { endLabel: label }),
+    })),
 
   fetchRoutes: async () => {
     const { start, end } = get();
 
     set({ isLoading: true, error: null });
 
-    console.log(start,end);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/navigation`, {
         method: 'POST',
@@ -89,6 +98,8 @@ export const useStore = create<StoreState>((set, get) => ({
     set({
       start: { ...defaultPoint },
       end: { ...defaultPoint },
+      startLabel: '',
+      endLabel: '',
       response: null,
       isLoading: false,
       error: null,
