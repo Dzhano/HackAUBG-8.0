@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Route Demo</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <style>
+    #map { height: 600px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([42.6977, 23.3219], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    fetch('route_result.json')
+      .then(res => res.json())
+      .then(routeData => {
+        const routeLayer = L.geoJSON(routeData.geometry, {
+          style: { color: 'blue', weight: 5 }
+        }).addTo(map);
+
+        map.fitBounds(routeLayer.getBounds());
+      })
+      .catch(err => console.error('Failed to load route_result.json:', err));
+  </script>
+</body>
+</html>
