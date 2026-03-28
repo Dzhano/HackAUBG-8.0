@@ -5,11 +5,9 @@ from pathlib import Path
 from scipy.spatial import cKDTree
 from shapely.geometry import LineString
 
-
 def load_graph(path: Path):
     with open(path, "rb") as f:
         return pickle.load(f)
-
 
 def build_kdtree(G):
     node_ids = []
@@ -17,8 +15,8 @@ def build_kdtree(G):
 
     for nid, data in G.nodes(data=True):
         lat = float(data["y"])
-        lon = float(data["x"])
-        x = lon * math.cos(math.radians(lat))
+        lng = float(data["x"])
+        x = lng * math.cos(math.radians(lat))
         node_ids.append(nid)
         coords_xy.append((x, lat))
 
@@ -51,6 +49,7 @@ def get_best_edge(G, u, v):
 def route_to_geometry(G, path: list):
     coords = []
     total_length = 0.0
+    total_accidents = 0.0
 
     for u, v in zip(path[:-1], path[1:]):
         edge = get_best_edge(G, u, v)
@@ -58,6 +57,7 @@ def route_to_geometry(G, path: list):
             continue
 
         total_length += float(edge.get("length", 0.0))
+        total_accidents += float(edge.get('accident_count', 0.0))
 
         geom = edge.get("geometry")
         if geom is not None:
@@ -78,4 +78,4 @@ def route_to_geometry(G, path: list):
     if len(coords) < 2:
         raise ValueError("Route geometry could not be built")
 
-    return LineString(coords), total_length
+    return LineString(coords), total_length, total_accidents
