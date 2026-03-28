@@ -6,19 +6,16 @@ from scipy.spatial import cKDTree
 from shapely.geometry import LineString, mapping
 import time
 
-
 GRAPH_FILE = "bulgaria-driving-graph.pkl"
 
 start = {"lat": 42.690062, "lng": 23.306588 }
 end = {"lat": 42.648641, "lng": 23.3306865 }    
 output_file = "route_result.json"
 
-
 def load_graph():
     with open(GRAPH_FILE, "rb") as f:
         G = pickle.load(f)
     return G
-
 
 def build_kdtree(G):
     node_ids = []
@@ -37,7 +34,6 @@ def build_kdtree(G):
 
     tree = cKDTree(coords_xy)
     return node_ids, tree
-
 
 def nearest_node(lat, lng, node_ids, tree):
     x = lng * math.cos(math.radians(lat))
