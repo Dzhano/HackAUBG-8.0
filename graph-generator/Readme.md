@@ -18,3 +18,10 @@ To see what values the first few edges hold you can run `python test-preview-gra
 
 # Get a slice of the whole graph dataset of Bulgaria
 `osmium extract --bbox 23.0728311,41.4934159,23.9858941,43.502965 bulgaria-latest.osm.pbf -o bulgaria-slice.osm.pbf`
+
+# Install conda environment to run osm-to-pkl.py (MacOS)
+```
+conda create -n map-path python=3.10
+conda activate map-path
+conda install -c conda-forge pyrosm networkx fastapi uvicorn scipy shapely geopandas
+```
