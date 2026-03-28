@@ -12,6 +12,13 @@
   </style>
 </head>
 <body>
+  <div>
+    <form id="route-form">
+      <input type="text" id="start" value="42.6977, 23.3219" placeholder="Start">
+      <input type="text" id="end" value="42.6977, 23.3419" placeholder="End">
+      <input type="submit" value="Calculate Route">
+    </form>
+  </div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -22,16 +29,69 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    fetch('route_result.json')
-      .then(res => res.json())
-      .then(routeData => {
-        const routeLayer = L.geoJSON(routeData.geometry, {
-          style: { color: 'blue', weight: 5 }
-        }).addTo(map);
+    const startInput = document.getElementById('start');
+    const endInput = document.getElementById('end');
 
-        map.fitBounds(routeLayer.getBounds());
-      })
-      .catch(err => console.error('Failed to load route_result.json:', err));
+    function parseCoords(str) {
+      const [lat, lng] = str.split(',').map(Number);
+      return [lat, lng];
+    }
+
+    const startMarker = L.marker(parseCoords(startInput.value), { draggable: true }).addTo(map);
+    const endMarker = L.marker(parseCoords(endInput.value), { draggable: true }).addTo(map);
+
+    startMarker.bindTooltip('Start', { permanent: true, direction: 'top' });
+    endMarker.bindTooltip('End', { permanent: true, direction: 'top' });
+
+    map.fitBounds(L.latLngBounds(
+      startMarker.getLatLng(),
+      endMarker.getLatLng()
+    ).pad(0.1));
+
+    function updateInput(input, marker) {
+      const { lat, lng } = marker.getLatLng();
+      input.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+
+    startMarker.on('dragend', () => updateInput(startInput, startMarker));
+    endMarker.on('dragend', () => updateInput(endInput, endMarker));
+
+    startInput.addEventListener('change', () => {
+      startMarker.setLatLng(parseCoords(startInput.value));
+    });
+
+    endInput.addEventListener('change', () => {
+      endMarker.setLatLng(parseCoords(endInput.value));
+    });
+
+    let routeLayer = null;
+
+    const form = document.getElementById('route-form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const [startLat, startLng] = parseCoords(startInput.value);
+      const [endLat, endLng] = parseCoords(endInput.value);
+      const start = { lat: startLat, lng: startLng };
+      const end = { lat: endLat, lng: endLng };
+      console.log(start, end);
+      fetch(
+        `http://localhost:8000/navigation`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ start, end }),
+        }
+      )
+        .then(res => res.json())
+        .then(routeData => {
+          if (routeLayer) {
+            map.removeLayer(routeLayer);
+          }
+          routeLayer = L.geoJSON(routeData.geometry, {
+            style: { color: 'blue', weight: 5 }
+          }).addTo(map);
+        })
+    });
   </script>
 </body>
 </html>

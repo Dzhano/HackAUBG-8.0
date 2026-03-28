@@ -3,7 +3,6 @@ import csv
 INPUT_FILE = "mvr-accidents-dataset.csv"
 OUTPUT_FILE = "accidents-clean.csv"
 
-
 def to_float(value: str):
     if value is None:
         return None

@@ -1,11 +1,15 @@
 import csv
 import math
 import pickle
+import time
 from scipy.spatial import cKDTree
 
 GRAPH_FILE = "../bulgaria-driving-graph.pkl"
 ACCIDENTS_FILE = "../accidents-clean.csv"
 OUTPUT_GRAPH_FILE = "bulgaria-driving-graph-with-accidents.pkl"
+
+INJURY_WEIGHT = 3.0
+DEATH_WEIGHT = 10.0
 
 ALPHA = 10.0
 
@@ -24,7 +28,6 @@ def init_edge_attributes(G):
         data["accident_count"] = 0
         data["injury_count"] = 0
         data["death_count"] = 0
-        data["risk_score"] = 0.0
 
 
 def edge_midpoint_from_data(G, u, v, data):
@@ -102,20 +105,37 @@ def attach_accidents(G, edge_refs, tree):
             # simple starter risk model
             edge_data["risk_score"] = (
                 edge_data["accident_count"]
-                + 3 * edge_data["injury_count"]
-                + 10 * edge_data["death_count"]
+                + INJURY_WEIGHT * edge_data["injury_count"]
+                + DEATH_WEIGHT * edge_data["death_count"]
             )
 
             attached += 1
 
     return total, attached
 
-
 def compute_risk_weights(G, alpha=ALPHA):
+    with open( 'logfile.txt', 'w' ) as f:
+        f.write("Risk weight: Risk weight old:\n")
+        for u, v, key, data in G.edges(keys=True, data=True):
+            length = float(data.get("length", 0.0))
+            risk_score = float(data.get("risk_score", 0.0))
+
+            risk_density = 0;
+
+            if length != 0:
+                risk_density = risk_score / length;
+            
+            data["risk_density"] = risk_density
+            data["risk_weight"] = length + alpha * risk_density
+            data['risk_weight_old'] = length + alpha * risk_score
+
+            if data['risk_weight'] != data['risk_weight_old']:
+                f.write(f"Length: {length}, {data['risk_weight']}: {data['risk_weight_old']}\n")
+
+def strip_intermediate_attrs(G):
     for u, v, key, data in G.edges(keys=True, data=True):
-        length = float(data.get("length", 0.0))
-        risk_score = float(data.get("risk_score", 0.0))
-        data["risk_weight"] = length + alpha * risk_score
+        data.pop("injury_count", None)
+        data.pop("death_count", None)
 
 
 def save_graph(G):
@@ -137,8 +157,12 @@ if __name__ == "__main__":
     print(f"Processed accidents: {total}")
     print(f"Attached accidents: {attached}")
 
+    now = time.time()
     compute_risk_weights(G, alpha=ALPHA)
-    print(f"Risk weights computed (alpha={ALPHA})")
+    print(f"Risk weights computed (alpha={ALPHA}) in {time.time() - now} seconds")
 
+    strip_intermediate_attrs(G)
+    print("Intermediate attributes stripped")
+    
     save_graph(G)
     print(f"Saved to {OUTPUT_GRAPH_FILE}")
