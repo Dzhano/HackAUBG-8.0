@@ -16,6 +16,7 @@
     <form id="route-form">
       <input type="text" id="start" value="42.6977, 23.3219" placeholder="Start">
       <input type="text" id="end" value="42.6977, 23.3419" placeholder="End">
+      <input type="text" id="risk-factor" value="10" placeholder="Risk Factor" min="0" max="10">
       <input type="submit" value="Calculate Route">
     </form>
   </div>
@@ -73,13 +74,14 @@
       const [endLat, endLng] = parseCoords(endInput.value);
       const start = { lat: startLat, lng: startLng };
       const end = { lat: endLat, lng: endLng };
-      console.log(start, end);
+      const riskFactor = document.getElementById('risk-factor').value;
+      console.log(start, end, riskFactor);
       fetch(
         `http://localhost:8000/navigation`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ start, end }),
+          body: JSON.stringify({ start, end, risk_factor: parseInt(riskFactor) }),
         }
       )
         .then(res => res.json())
