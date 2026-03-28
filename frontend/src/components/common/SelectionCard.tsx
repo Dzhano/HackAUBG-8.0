@@ -12,11 +12,11 @@ type Props = {
 };
 
 const variantStyles: Record<Variant, { active: string; iconBg: string }> = {
-    current: {
+    shortest: {
         active: 'border-orange-500 bg-orange-50 ring-2 ring-orange-200 shadow-xl',
         iconBg: 'bg-orange-100 text-orange-600',
     },
-    shortest: {
+    current : {
         active: 'border-blue-500 bg-blue-50 ring-2 ring-blue-200 shadow-xl',
         iconBg: 'bg-blue-100 text-blue-600',
     },

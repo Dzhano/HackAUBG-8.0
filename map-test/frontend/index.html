@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Route Demo</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <style>
+    #map { height: 600px; }
+  </style>
+</head>
+<body>
+  <div>
+    <form id="route-form">
+      <input type="text" id="start" value="42.6977, 23.3219" placeholder="Start">
+      <input type="text" id="end" value="42.6977, 23.3419" placeholder="End">
+      <input type="text" id="risk-factor" value="10" placeholder="Risk Factor" min="0" max="10">
+      <input type="submit" value="Calculate Route">
+    </form>
+    <div id="stats" style="margin-top: 10px; font-family: monospace;"></div>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([42.6977, 23.3219], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const startInput = document.getElementById('start');
+    const endInput = document.getElementById('end');
+
+    function parseCoords(str) {
+      const [lat, lng] = str.split(',').map(Number);
+      return [lat, lng];
+    }
+
+    const startMarker = L.marker(parseCoords(startInput.value), { draggable: true }).addTo(map);
+    const endMarker = L.marker(parseCoords(endInput.value), { draggable: true }).addTo(map);
+
+    startMarker.bindTooltip('Start', { permanent: true, direction: 'top' });
+    endMarker.bindTooltip('End', { permanent: true, direction: 'top' });
+
+    map.fitBounds(L.latLngBounds(
+      startMarker.getLatLng(),
+      endMarker.getLatLng()
+    ).pad(0.1));
+
+    function updateInput(input, marker) {
+      const { lat, lng } = marker.getLatLng();
+      input.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+
+    startMarker.on('dragend', () => updateInput(startInput, startMarker));
+    endMarker.on('dragend', () => updateInput(endInput, endMarker));
+
+    startInput.addEventListener('change', () => {
+      startMarker.setLatLng(parseCoords(startInput.value));
+    });
+
+    endInput.addEventListener('change', () => {
+      endMarker.setLatLng(parseCoords(endInput.value));
+    });
+
+    let currentLayer = null;
+    let shortestLayer = null;
+    let safestLayer = null;
+
+    function clearRoutes() {
+      if (currentLayer) map.removeLayer(currentLayer);
+      if (shortestLayer) map.removeLayer(shortestLayer);
+      if (safestLayer) map.removeLayer(safestLayer);
+    }
+
+    const form = document.getElementById('route-form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const [startLat, startLng] = parseCoords(startInput.value);
+      const [endLat, endLng] = parseCoords(endInput.value);
+      const start = { lat: startLat, lng: startLng };
+      const end = { lat: endLat, lng: endLng };
+      const riskFactor = document.getElementById('risk-factor').value;
+      console.log(start, end, riskFactor);
+      fetch(
+        `http://localhost:8000/navigation`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ start, end, risk_factor: parseFloat(riskFactor) }),
+        }
+      )
+        .then(res => res.json())
+        .then(routeData => {
+          clearRoutes();
+
+          // Shortest route - red (bottom layer)
+          if (routeData.shortest) {
+            shortestLayer = L.geoJSON(routeData.shortest.geometry, {
+              style: { color: 'red', weight: 6, opacity: 0.7 }
+            }).addTo(map).bindPopup('Shortest: ' + routeData.shortest.distance_m.toFixed(0) + 'm');
+          }
+
+          // Safest route - green (middle layer)
+          if (routeData.safest) {
+            safestLayer = L.geoJSON(routeData.safest.geometry, {
+              style: { color: 'green', weight: 5, opacity: 0.7 }
+            }).addTo(map).bindPopup('Safest: ' + routeData.safest.distance_m.toFixed(0) + 'm');
+          }
+
+          // Current route - blue (top layer)
+          if (routeData.current) {
+            currentLayer = L.geoJSON(routeData.current.geometry, {
+              style: { color: 'blue', weight: 4, opacity: 0.9 }
+            }).addTo(map).bindPopup('Current (RF=' + riskFactor + '): ' + routeData.current.distance_m.toFixed(0) + 'm');
+          }
+
+          // Calculate and display stats
+          const statsDiv = document.getElementById('stats');
+          const shortest = routeData.shortest || routeData.current;
+          const current = routeData.current;
+          const safest = routeData.safest;
+
+          const shortestRisk = shortest.total_accidents || 0;
+          const currentRisk = current.total_accidents || 0;
+          const safestRisk = safest ? (safest.total_accidents || 0) : currentRisk;
+
+          const currentSafer = shortestRisk > 0 ? ((shortestRisk - currentRisk) / shortestRisk * 100).toFixed(1) : 0;
+          const safestSafer = shortestRisk > 0 ? ((shortestRisk - safestRisk) / shortestRisk * 100).toFixed(1) : 0;
+
+          const currentLonger = shortest.distance_m > 0 ? ((current.distance_m - shortest.distance_m) / shortest.distance_m * 100).toFixed(1) : 0;
+          const safestLonger = shortest.distance_m > 0 && safest ? ((safest.distance_m - shortest.distance_m) / shortest.distance_m * 100).toFixed(1) : 0;
+
+          statsDiv.innerHTML = `
+            <table style="border-collapse: collapse;">
+              <tr style="background: #eee;"><th style="padding: 5px; border: 1px solid #ccc;">Route</th><th style="padding: 5px; border: 1px solid #ccc;">Distance</th><th style="padding: 5px; border: 1px solid #ccc;">vs Shortest</th></tr>
+              <tr style="color: red;"><td style="padding: 5px; border: 1px solid #ccc;">Shortest</td><td style="padding: 5px; border: 1px solid #ccc;">${shortest.distance_m.toFixed(0)}m</td><td style="padding: 5px; border: 1px solid #ccc;">baseline</td></tr>
+              <tr style="color: blue;"><td style="padding: 5px; border: 1px solid #ccc;">Current (RF=${riskFactor})</td><td style="padding: 5px; border: 1px solid #ccc;">${current.distance_m.toFixed(0)}m (+${currentLonger}%)</td><td style="padding: 5px; border: 1px solid #ccc;">${currentSafer}% safer</td></tr>
+              ${safest ? `<tr style="color: green;"><td style="padding: 5px; border: 1px solid #ccc;">Safest</td><td style="padding: 5px; border: 1px solid #ccc;">${safest.distance_m.toFixed(0)}m (+${safestLonger}%)</td><td style="padding: 5px; border: 1px solid #ccc;">${safestSafer}% safer</td></tr>` : ''}
+            </table>
+          `;
+        })
+    });
+  </script>
+</body>
+</html>

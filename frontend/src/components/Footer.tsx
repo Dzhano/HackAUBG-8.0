@@ -19,28 +19,28 @@ export const Footer = () => {
         <footer className="p-6 bg-white border-t border-gray-200">
             <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SelectionCard
-                    variant="current"
-                    icon={<Zap className="w-6 h-6" />}
-                    title="Current"
-                    description={ response?.shortest ? cardLabel(response.shortest) : 'Loading...' }
-                    selected={variant === 'current'}
-                    onClick={() => setVariant('current')}
-                />
-
-                <SelectionCard
                     variant="shortest"
-                    icon={<Scale className="w-6 h-6" />}
+                    icon={<Zap className="w-6 h-6" />}
                     title="Shortest"
-                    description={ response?.shortest ? cardLabel(response.shortest) : 'Loading...' }
+                    description={ response?.shortest ? cardLabel(response.shortest) : '' }
                     selected={variant === 'shortest'}
                     onClick={() => setVariant('shortest')}
                 />
 
                 <SelectionCard
+                    variant="current"
+                    icon={<Scale className="w-6 h-6" />}
+                    title="Current"
+                    description={ response?.current ? cardLabel(response.current) : '' }
+                    selected={variant === 'current'}
+                    onClick={() => setVariant('current')}
+                />
+
+                <SelectionCard
                     variant="safest"
                     icon={<ShieldCheck className="w-6 h-6" />}
-                    title="Longest"
-                    description={ response?.safest ? cardLabel(response.safest) : 'Loading...' }
+                    title="Safest"
+                    description={ response?.safest ? cardLabel(response.safest) : '' }
                     selected={variant === 'safest'}
                     onClick={() => setVariant('safest')}
                 />
