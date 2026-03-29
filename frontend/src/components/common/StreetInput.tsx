@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useStore } from '../../store/useStore';
 
 interface PhotonFeature {
     geometry: { coordinates: [number, number] };
@@ -7,6 +8,7 @@ interface PhotonFeature {
         street?: string;
         housenumber?: string;
         city?: string;
+        county?: string;
         state?: string;
         country?: string;
         osm_value?: string;
@@ -18,6 +20,8 @@ interface Props {
     value: string;
     onSelect: (lat: number, lng: number, label: string) => void;
     onChange: (text: string) => void;
+    onFocus?: () => void;
+    onBlur?: () => void;
 }
 
 function formatLabel(p: PhotonFeature['properties']): string {
@@ -32,9 +36,10 @@ function formatLabel(p: PhotonFeature['properties']): string {
 
 const DEBOUNCE_MS = 300;
 const PHOTON_URL = 'https://photon.komoot.io/api';
-const BG_CENTER = { lat: 42.6977, lon: 23.3217 };
+const BG_BBOX = '22.36,41.24,28.61,44.22';
 
-export const StreetInput: React.FC<Props> = ({ placeholder, value, onSelect, onChange }) => {
+export const StreetInput: React.FC<Props> = ({ placeholder, value, onSelect, onChange, onFocus, onBlur }) => {
+    const mapCenter = useStore((s) => s.mapCenter);
     const [suggestions, setSuggestions] = useState<PhotonFeature[]>([]);
     const [open, setOpen] = useState(false);
     const [activeIdx, setActiveIdx] = useState(-1);
@@ -49,20 +54,24 @@ export const StreetInput: React.FC<Props> = ({ placeholder, value, onSelect, onC
         try {
             const params = new URLSearchParams({
                 q: query,
-                lat: String(BG_CENTER.lat),
-                lon: String(BG_CENTER.lon),
-                limit: '5',
+                lat: String(mapCenter.lat),
+                lon: String(mapCenter.lng),
+                bbox: BG_BBOX,
+                limit: '10',
                 lang: 'en',
             });
             const res = await fetch(`${PHOTON_URL}?${params}`);
             const data = await res.json();
-            setSuggestions(data.features ?? []);
+            const bgOnly = (data.features ?? [])
+                .filter((f: PhotonFeature) => f.properties.country === 'Bulgaria')
+                .slice(0, 5);
+            setSuggestions(bgOnly);
             setOpen(true);
             setActiveIdx(-1);
         } catch {
             setSuggestions([]);
         }
-    }, []);
+    }, [mapCenter]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const text = e.target.value;
@@ -97,6 +106,16 @@ export const StreetInput: React.FC<Props> = ({ placeholder, value, onSelect, onC
         }
     };
 
+    const handleFocus = () => {
+        if(suggestions.length > 0) { 
+            setOpen(true);
+        }
+
+        if(onFocus) {
+            onFocus();
+        }
+    }
+
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
@@ -118,11 +137,12 @@ export const StreetInput: React.FC<Props> = ({ placeholder, value, onSelect, onC
             <input
                 type="text"
                 placeholder={placeholder}
-                className="w-full px-4 py-2 bg-gray-100 border border-transparent rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                className="w-full px-4 py-2 bg-gray-100 border-2 border-transparent rounded-full focus:bg-white focus:border-blue-500 outline-none transition-all"
                 value={value}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                onFocus={() => suggestions.length > 0 && setOpen(true)}
+                onFocus={handleFocus}
+                onBlur={onBlur}
             />
 
             {open && suggestions.length > 0 && (
@@ -138,15 +158,18 @@ export const StreetInput: React.FC<Props> = ({ placeholder, value, onSelect, onC
                             onMouseEnter={() => setActiveIdx(idx)}
                             onMouseDown={() => handleSelect(feat)}
                         >
-                            <span className="font-medium">
+                            <span className="font-medium block">
                                 {feat.properties.name || feat.properties.street || 'Unnamed'}
                             </span>
-                            {feat.properties.city && (
-                                <span className="text-gray-400 ml-1">
-                                    — {feat.properties.city}
-                                    {feat.properties.country ? `, ${feat.properties.country}` : ''}
-                                </span>
-                            )}
+                            <span className="text-gray-400 text-xs block">
+                                {[
+                                    feat.properties.county,
+                                    feat.properties.street
+                                        ? `${feat.properties.street}${feat.properties.housenumber ? ` ${feat.properties.housenumber}` : ''}`
+                                        : null,
+                                    feat.properties.city,
+                                ].filter(Boolean).join(', ')}
+                            </span>
                         </li>
                     ))}
                 </ul>

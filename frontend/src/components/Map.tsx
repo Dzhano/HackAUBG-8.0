@@ -1,10 +1,21 @@
 import { useCallback } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import { useStore } from '../store/useStore';
 import { DraggableMarker } from './Map/DraggableMarker';
 import { MapRoutes } from './Map/MapRoutes';
 import { TrafficIncidents } from './Map/TrafficIncidents';
 import 'leaflet/dist/leaflet.css';
+
+function MapCenterTracker() {
+    const setMapCenter = useStore((s) => s.setMapCenter);
+    useMapEvents({
+        moveend(e) {
+            const { lat, lng } = e.target.getCenter();
+            setMapCenter(lat, lng);
+        },
+    });
+    return null;
+}
 
 const SOFIA_CENTER: [number, number] = [42.6977, 23.3219];
 const PHOTON_REVERSE = 'https://photon.komoot.io/reverse';
@@ -31,21 +42,30 @@ export const Map = () => {
     const end = useStore((s) => s.end);
     const setStart = useStore((s) => s.setStart);
     const setEnd = useStore((s) => s.setEnd);
+    const fetchRoutes = useStore((s) => s.fetchRoutes);
 
     const handleStartDrag = useCallback(
         (lat: number, lng: number) => {
             setStart({ lat, lng }, `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-            reverseGeocode(lat, lng).then((label) => setStart({ lat, lng }, label));
+            reverseGeocode(lat, lng).then((label) => {
+                setStart({ lat, lng }, label);
+                const { end } = useStore.getState();
+                if (end.lat != null && end.lng != null) fetchRoutes();
+            });
         },
-        [setStart],
+        [setStart, fetchRoutes],
     );
 
     const handleEndDrag = useCallback(
         (lat: number, lng: number) => {
             setEnd({ lat, lng }, `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-            reverseGeocode(lat, lng).then((label) => setEnd({ lat, lng }, label));
+            reverseGeocode(lat, lng).then((label) => {
+                setEnd({ lat, lng }, label);
+                const { start } = useStore.getState();
+                if (start.lat != null && start.lng != null) fetchRoutes();
+            });
         },
-        [setEnd],
+        [setEnd, fetchRoutes],
     );
 
     return (
@@ -59,6 +79,7 @@ export const Map = () => {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <MapCenterTracker />
 
                 {start.lat != null && start.lng != null && (
                     <DraggableMarker
@@ -72,6 +93,7 @@ export const Map = () => {
                     <DraggableMarker
                         position={[end.lat, end.lng]}
                         label={'End'}
+                        color="red"
                         onDragEnd={handleEndDrag}
                     />
                 )}

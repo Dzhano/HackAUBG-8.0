@@ -3,8 +3,8 @@ import { create } from 'zustand';
 export type Variant = 'current' | 'shortest' | 'safest';
 
 export interface RoutePoint {
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface SingleRoute {
@@ -47,17 +47,19 @@ interface StoreState {
   isLoading: boolean;
   error: string | null;
   currentVariant: Variant;
+  mapCenter: { lat: number; lng: number };
   setCurrentVariant: (variant: Variant) => void;
   setStart: (point: Partial<RoutePoint>, label?: string) => void;
   setEnd: (point: Partial<RoutePoint>, label?: string) => void;
+  setMapCenter: (lat: number, lng: number) => void;
   fetchRoutes: () => Promise<void>;
   fetchIncidents: (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => Promise<void>;
   reset: () => void;
 }
 
 const defaultPoint: RoutePoint = {
-  lat: 42.6977,
-  lng: 23.3219,
+  lat: null,
+  lng: null,
 };
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -70,9 +72,13 @@ export const useStore = create<StoreState>((set, get) => ({
   isLoading: false,
   error: null,
   currentVariant: 'current',
+  mapCenter: { lat: 42.6977, lng: 23.3219 },
 
   setCurrentVariant: (variant) =>
     set({ currentVariant: variant }),
+
+  setMapCenter: (lat, lng) =>
+    set({ mapCenter: { lat, lng } }),
 
   setStart: (point, label?) =>
     set((state) => ({

@@ -28,31 +28,19 @@ const variantStyles: Record<Variant, { active: string; iconBg: string }> = {
 
 export const SelectionCard = ({ icon, title, description, selected = false, variant, onClick }: Props) => {
     const styles = variantStyles[variant];
-    const [stat, km] = description.split(' · ');
 
     return (
         <div
             onClick={onClick}
-            className={`p-2 md:p-5 rounded-xl md:rounded-2xl border-2 transition-all cursor-pointer transform hover:-translate-y-1 ${
+            className={`flex md:flex-col items-center md:items-start rounded-2xl border-2 transition-all p-2 md:p-5 cursor-pointer transform md:hover:-translate-y-1 ${
                 selected ? styles.active : 'border-gray-100 bg-white shadow-sm'
             }`}
         >
-            <div className="flex flex-col md:flex-row items-center gap-1 md:gap-3">
-                <div className={`p-1 md:p-2 rounded-lg ${styles.iconBg}`}>
-                    <span className="block md:hidden [&>svg]:w-4 [&>svg]:h-4">{icon}</span>
-                    <span className="hidden md:block">{icon}</span>
-                </div>
-                <h3 className="font-bold text-xs md:text-lg uppercase text-center md:text-left">{title}</h3>
+            <div className="flex items-center gap-2 md:gap-3">
+                <div className={`p-2 rounded-lg ${styles.iconBg}`}>{icon}</div>
+                <h3 className="font-bold text-sm md:text-lg uppercase">{title}</h3>
             </div>
-
-            {/* Mobile: centered, km on new line */}
-            <div className="block md:hidden text-center mt-1">
-                <p className="text-xs text-gray-500 italic">{stat}</p>
-                {km && <p className="text-xs text-gray-500 italic">{km}</p>}
-            </div>
-
-            {/* Desktop: single line */}
-            <p className="hidden md:block text-sm text-gray-500 mt-2 italic">{description}</p>
+            <p className="text-sm text-gray-500 md:mt-2 italic ml-auto md:ml-none">{description}</p>
         </div>
     );
 };

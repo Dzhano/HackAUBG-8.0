@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { Zap, Scale, ShieldCheck } from 'lucide-react';
 import { SelectionCard } from './common/SelectionCard';
 import { SingleRoute, useStore } from '../store/useStore';
@@ -30,11 +31,18 @@ export const Footer = () => {
     const response = useStore((s) => s.response);
 
     return (
-        <footer className="p-3 md:p-6 bg-white border-t border-gray-200">
-            <div className="max-w-5xl mx-auto grid grid-cols-3 gap-2 md:gap-6">
+        <footer 
+            className={ clsx(
+                'fixed bottom-0 left-0 w-full p-3 md:p-6 bg-white border-t border-gray-200 transition-all duration-300',
+                {
+                    'translate-y-100': response === null,
+                }
+            ) }
+        >
+            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
                 <SelectionCard
                     variant="shortest"
-                    icon={<Zap className="w-6 h-6" />}
+                    icon={<Zap className="w-3 h-3 md:w-6 md:h-6" />}
                     title="Shortest"
                     description={ response?.shortest ? shortestLabel(response.shortest) : '' }
                     selected={variant === 'shortest'}
@@ -43,7 +51,7 @@ export const Footer = () => {
 
                 <SelectionCard
                     variant="current"
-                    icon={<Scale className="w-6 h-6" />}
+                    icon={<Scale className="w-3 h-3 md:w-6 md:h-6" />}
                     title="Current"
                     description={ response?.current ? cardLabel(response.current, response.shortest) : '' }
                     selected={variant === 'current'}
@@ -52,7 +60,7 @@ export const Footer = () => {
 
                 <SelectionCard
                     variant="safest"
-                    icon={<ShieldCheck className="w-6 h-6" />}
+                    icon={<ShieldCheck className="w-3 h-3 md:w-6 md:h-6" />}
                     title="Safest"
                     description={ response?.safest ? cardLabel(response.safest, response.shortest) : '' }
                     selected={variant === 'safest'}
