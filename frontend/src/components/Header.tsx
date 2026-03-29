@@ -57,7 +57,7 @@ export const Header = () => {
                     onClick={fetchRoutes}
                     className="px-8 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 shadow-lg active:scale-95 transition-all w-full md:w-auto"
                 >
-                    Go!
+                    Search
                 </button>
             </div>
 
