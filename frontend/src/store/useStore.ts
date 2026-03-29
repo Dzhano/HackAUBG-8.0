@@ -25,12 +25,25 @@ export interface RouteResponse {
   safest: SingleRoute;
 }
 
+export interface TrafficIncident {
+  category: string;
+  from: string;
+  to: string;
+  description: string;
+  delay: number;
+  geometry: {
+    type: string;
+    coordinates: [number, number][] | [number, number];
+  };
+}
+
 interface StoreState {
   start: RoutePoint;
   end: RoutePoint;
   startLabel: string;
   endLabel: string;
   response: RouteResponse | null;
+  incidents: TrafficIncident[];
   isLoading: boolean;
   error: string | null;
   currentVariant: Variant;
@@ -38,6 +51,7 @@ interface StoreState {
   setStart: (point: Partial<RoutePoint>, label?: string) => void;
   setEnd: (point: Partial<RoutePoint>, label?: string) => void;
   fetchRoutes: () => Promise<void>;
+  fetchIncidents: (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => Promise<void>;
   reset: () => void;
 }
 
@@ -52,6 +66,7 @@ export const useStore = create<StoreState>((set, get) => ({
   startLabel: '',
   endLabel: '',
   response: null,
+  incidents: [],
   isLoading: false,
   error: null,
   currentVariant: 'current',
@@ -94,6 +109,22 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
+  fetchIncidents: async (bounds) => {
+    try {
+      const params = new URLSearchParams({
+        min_lat: bounds.minLat.toString(),
+        min_lng: bounds.minLng.toString(),
+        max_lat: bounds.maxLat.toString(),
+        max_lng: bounds.maxLng.toString(),
+      });
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/traffic/incidents?${params}`);
+      const data = await response.json();
+      set({ incidents: data.incidents || [] });
+    } catch (err) {
+      console.error('Failed to fetch incidents:', err);
+    }
+  },
+
   reset: () =>
     set({
       start: { ...defaultPoint },
@@ -101,6 +132,7 @@ export const useStore = create<StoreState>((set, get) => ({
       startLabel: '',
       endLabel: '',
       response: null,
+      incidents: [],
       isLoading: false,
       error: null,
     }),

@@ -3,6 +3,7 @@ import { MapContainer, TileLayer } from 'react-leaflet';
 import { useStore } from '../store/useStore';
 import { DraggableMarker } from './Map/DraggableMarker';
 import { MapRoutes } from './Map/MapRoutes';
+import { TrafficIncidents } from './Map/TrafficIncidents';
 import 'leaflet/dist/leaflet.css';
 
 const SOFIA_CENTER: [number, number] = [42.6977, 23.3219];
@@ -76,6 +77,7 @@ export const Map = () => {
                 )}
 
                 <MapRoutes />
+                <TrafficIncidents />
             </MapContainer>
         </main>
     );

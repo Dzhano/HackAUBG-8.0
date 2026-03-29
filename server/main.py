@@ -1,5 +1,7 @@
 import itertools
 import time
+import os
+import requests
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Query
@@ -12,6 +14,7 @@ from utils.graph import build_kdtree, load_graph, nearest_node, route_to_geometr
 from utils.pathfinder import find_path
 
 GRAPH_FILE = "./bulgaria-driving-graph-with-accidents.pkl"
+TOMTOM_API_KEY = os.getenv("TOMTOM_API_KEY", "8EdZAw7Pr6qSvZ5dZQNtUZy7aWgK33Iu")
 
 graph_state: dict = {}
 
@@ -77,4 +80,63 @@ def navigation(req: NavigationRequest):
         "shortest": shortest,
         "safest": safest,
     }
+
+
+@app.get("/traffic/incidents")
+def get_traffic_incidents(
+    min_lat: float = Query(42.5, description="Min latitude"),
+    min_lng: float = Query(23.0, description="Min longitude"),
+    max_lat: float = Query(42.8, description="Max latitude"),
+    max_lng: float = Query(23.5, description="Max longitude"),
+):
+    """Fetch traffic incidents (closed roads, accidents) from TomTom API"""
+    bbox = f"{min_lng},{min_lat},{max_lng},{max_lat}"
+
+    url = "https://api.tomtom.com/traffic/services/5/incidentDetails"
+    params = {
+        "key": TOMTOM_API_KEY,
+        "bbox": bbox,
+        "fields": "{incidents{type,geometry{type,coordinates},properties{iconCategory,from,to,roadNumbers,delay,events{description,code}}}}",
+        "language": "en-GB",
+        "timeValidityFilter": "present"
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"TomTom API error: {str(e)}")
+
+    # Filter and format incidents
+    incidents = []
+    icon_categories = {
+        0: "unknown", 1: "accident", 2: "fog", 3: "dangerous",
+        6: "road_closed", 7: "road_works", 9: "congestion", 14: "broken_vehicle"
+    }
+
+    for incident in data.get("incidents", []):
+        props = incident.get("properties", {})
+        geom = incident.get("geometry", {})
+
+        category = icon_categories.get(props.get("iconCategory"), "other")
+        events = props.get("events", [])
+        description = events[0].get("description", "") if events else ""
+
+        # Convert coordinates to GeoJSON format [lng, lat] -> LineString
+        coords = geom.get("coordinates", [])
+
+        incidents.append({
+            "category": category,
+            "from": props.get("from", ""),
+            "to": props.get("to", ""),
+            "description": description,
+            "delay": props.get("delay", 0),
+            "geometry": {
+                "type": geom.get("type", "LineString"),
+                "coordinates": coords
+            }
+        })
+
+    return {"incidents": incidents, "count": len(incidents)}
 

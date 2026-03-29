@@ -8,3 +8,9 @@ node_modules
 .env
 .DS_Store
 *.osm.pbf
+graph-generator/bulgaria.osm
+graph-generator/raw-data/*.pkl
+*.pkl
+*.osm.pbf
+graph-generator/accidents-clean.csv
+graph-generator/tomtom-response.json
