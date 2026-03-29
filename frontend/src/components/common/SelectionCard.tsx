@@ -40,7 +40,7 @@ export const SelectionCard = ({ icon, title, description, selected = false, vari
                 <div className={`p-2 rounded-lg ${styles.iconBg}`}>{icon}</div>
                 <h3 className="font-bold text-sm md:text-lg uppercase">{title}</h3>
             </div>
-            <p className="text-sm text-gray-500 md:mt-2 italic ml-auto md:ml-none">{description}</p>
+            <p className="text-sm text-gray-500 md:mt-2 italic ml-auto md:ml-0">{description}</p>
         </div>
     );
 };
