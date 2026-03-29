@@ -1,6 +1,6 @@
 import { Zap, Scale, ShieldCheck } from 'lucide-react';
 import { SelectionCard } from './common/SelectionCard';
-import { RouteResponse, SingleRoute, useStore } from '../store/useStore';
+import { SingleRoute, useStore } from '../store/useStore';
 
 function cardLabel(route: SingleRoute | undefined, shortest: SingleRoute | undefined) {
     if (!route) {
@@ -30,8 +30,8 @@ export const Footer = () => {
     const response = useStore((s) => s.response);
 
     return (
-        <footer className="p-6 bg-white border-t border-gray-200">
-            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <footer className="p-3 md:p-6 bg-white border-t border-gray-200">
+            <div className="max-w-5xl mx-auto grid grid-cols-3 gap-2 md:gap-6">
                 <SelectionCard
                     variant="shortest"
                     icon={<Zap className="w-6 h-6" />}

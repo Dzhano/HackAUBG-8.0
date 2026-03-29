@@ -30,12 +30,15 @@ export const Header = () => {
     );
 
     return (
-        <header className="flex items-center justify-between p-4 bg-white border-b shadow-md sticky top-0 z-10">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg text-white font-black italic shadow-inner">
-                SafeWay
+        <header className="flex flex-col md:flex-row items-center justify-between p-3 md:p-4 bg-white border-b shadow-md sticky top-0 z-10">
+            <div className="flex items-center gap-2 mb-2 md:mb-0">
+                <img src="/logo.png" alt="SafeWay" className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover" />
+                <h1 className="text-2xl md:text-3xl font-bold text-blue-600" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    SafeWay
+                </h1>
             </div>
 
-            <div className="flex flex-1 max-w-3xl mx-8 gap-3">
+            <div className="flex flex-col md:flex-row w-full md:flex-1 md:max-w-3xl md:mx-8 gap-2 md:gap-3">
                 <StreetInput
                     placeholder="Starting point (Sofia)..."
                     value={startLabel}
@@ -52,11 +55,12 @@ export const Header = () => {
 
                 <button
                     onClick={fetchRoutes}
-                    className="px-8 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 shadow-lg active:scale-95 transition-all"
+                    className="px-8 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 shadow-lg active:scale-95 transition-all w-full md:w-auto"
                 >
                     Go!
                 </button>
             </div>
+
         </header>
     );
 };
